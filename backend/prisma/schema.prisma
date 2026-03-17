@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum StepType {
+  task
+  approval
+  notification
+}
+
+enum ExecutionStatus {
+  pending
+  in_progress
+  pending_approval
+  completed
+  failed
+  canceled
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  inputSchema Json
+  startStepId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  steps       Step[]
+  executions  Execution[]
+}
+
+model Step {
+  id         String   @id @default(uuid())
+  workflowId String
+  name       String
+  stepType   StepType @default(task)
+  order      Int
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  rules      Rule[]
+  logs       ExecutionLog[]
+
+  @@index([workflowId])
+}
+
+model Rule {
+  id         String   @id @default(uuid())
+  stepId     String
+  condition  String
+  nextStepId String?
+  priority   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  step       Step     @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId])
+  @@index([nextStepId])
+}
+
+model Execution {
+  id              String          @id @default(uuid())
+  workflowId      String
+  workflowVersion Int
+  status          ExecutionStatus @default(pending)
+  data            Json
+  currentStepId   String?
+  retries         Int             @default(0)
+  triggeredBy     String?
+  startedAt       DateTime        @default(now())
+  endedAt         DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  workflow        Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  logs            ExecutionLog[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([currentStepId])
+}
+
+model ExecutionLog {
+  id               String   @id @default(uuid())
+  executionId      String
+  stepId           String?
+  stepName         String?
+  stepType         StepType?
+  evaluatedRules   Json?
+  selectedNextStep String?
+  status           String
+  approverId       String?
+  errorMessage     String?
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+  durationMs       Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  execution        Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step             Step?     @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([executionId])
+  @@index([stepId])
+}

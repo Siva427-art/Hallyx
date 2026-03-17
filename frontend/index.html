@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Halleyx — Workflow Engine</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Workflow orchestration console</span>
+      <h1>Workflow registry, execution, and audit in one dashboard.</h1>
+      <p>Manage workflow definitions, routing rules, step execution, and audit visibility from a compact operator console.</p>
+      <div class="hero-highlights">
+        <span>Workflow CRUD</span>
+        <span>Execution control</span>
+        <span>Audit visibility</span>
+      </div>
+      <div class="hero-actions">
+        <button id="open-workflow-editor" class="hero-primary">Create Workflow</button>
+        <span class="hero-note">Connected to <strong>local API</strong> at <code>localhost:3000</code></span>
+      </div>
+      <form id="auth-form" class="auth-panel" autocomplete="off">
+        <input id="login-username" placeholder="username (employee/manager)" />
+        <input id="login-password" type="password" placeholder="password" />
+        <button type="submit" id="login-button">Login</button>
+        <button type="button" id="logout-button" class="secondary">Logout</button>
+        <span id="auth-status" class="hero-note">Not logged in</span>
+      </form>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <div class="brand-logo">
+      <img src="./logo.png" class="brand-icon" alt="Halleyx logo" />
+      <span class="brand-text">Halleyx</span>
+    </div>
+    <button data-tab="workflows" class="active">Workflows</button>
+    <button data-tab="editor">Editor</button>
+    <button data-tab="steps">Steps</button>
+    <button data-tab="rules">Rules</button>
+    <button data-tab="execute">Execute</button>
+    <button data-tab="audit">Audit</button>
+  </nav>
+
+  <section class="overview-grid">
+    <article class="overview-card">
+      <span class="metric-label">Workflows</span>
+      <strong id="overview-workflow-count">0</strong>
+      <p id="overview-workflow-note">Registry total</p>
+    </article>
+    <article class="overview-card">
+      <span class="metric-label">Active</span>
+      <strong id="overview-active-count">0</strong>
+      <p id="overview-active-note">Visible active flows</p>
+    </article>
+    <article class="overview-card">
+      <span class="metric-label">Executions</span>
+      <strong id="overview-execution-count">0</strong>
+      <p id="overview-execution-note">Audit entries loaded</p>
+    </article>
+    <article class="overview-card wide">
+      <span class="metric-label">Selection</span>
+      <strong id="overview-selection-title">No workflow selected</strong>
+      <p id="overview-selection-note">Choose a workflow to inspect steps and execution context.</p>
+    </article>
+  </section>
+
+  <main>
+    <section id="tab-workflows" class="tab active">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Registry</span>
+          <h2>Workflow List</h2>
+          <p>Search, filter, paginate, edit, and launch workflows with a tighter operator view.</p>
+        </div>
+        <button id="open-workflow-editor-secondary">Create Workflow</button>
+      </div>
+
+      <div class="card filters-grid">
+        <input id="workflow-search" placeholder="Search by name or description" />
+        <select id="workflow-status-filter">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <select id="workflow-limit">
+          <option value="5">5 per page</option>
+          <option value="10" selected>10 per page</option>
+          <option value="20">20 per page</option>
+        </select>
+        <button id="workflow-search-button">Apply</button>
+      </div>
+
+      <div class="card table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Steps</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="workflow-table-body"></tbody>
+        </table>
+        <div class="pagination-row">
+          <button id="workflow-prev-page">Previous</button>
+          <span id="workflow-page-label">Page 1</span>
+          <button id="workflow-next-page">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-editor" class="tab">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Builder</span>
+          <h2>Workflow Editor</h2>
+          <p>Shape workflow metadata, input contracts, and step sequencing from a single editing surface.</p>
+        </div>
+        <button id="back-to-workflows">Back to Workflows</button>
+      </div>
+
+      <form id="workflow-form" class="card">
+        <input id="wf-id" type="hidden" />
+        <input id="wf-name" placeholder="Workflow name" required />
+        <input id="wf-description" placeholder="Description" />
+        <textarea id="wf-schema" rows="6">{"amount":{"type":"number","required":true},"country":{"type":"string","required":true},"priority":{"type":"string","required":true,"allowed_values":["High","Medium","Low"]}}</textarea>
+        <div class="row inline-actions">
+          <button type="submit" id="workflow-save-button">Save Workflow</button>
+          <button type="button" id="workflow-reset-button" class="secondary">Reset</button>
+          <button type="button" id="workflow-delete-button" class="danger">Delete Workflow</button>
+        </div>
+      </form>
+
+      <div class="card editor-summary">
+        <span class="section-kicker">Preview</span>
+        <h3>Selected Workflow</h3>
+        <pre id="workflow-detail-output" class="output small"></pre>
+      </div>
+
+      <div class="card">
+        <span class="section-kicker">Step Builder</span>
+        <h3>Manage Steps</h3>
+        <form id="step-form">
+          <input id="step-id" type="hidden" />
+          <input id="step-workflow-id" placeholder="Workflow ID" required />
+          <input id="step-name" placeholder="Step name" required />
+          <select id="step-type">
+            <option value="task">task</option>
+            <option value="approval">approval</option>
+            <option value="notification">notification</option>
+          </select>
+          <input id="step-order" type="number" value="1" min="1" required />
+          <textarea id="step-metadata" rows="3">{"note":"optional"}</textarea>
+          <div class="row inline-actions">
+            <button type="submit" id="step-save-button">Save Step</button>
+            <button type="button" id="step-reset-button" class="secondary">Reset Step Form</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card table-card">
+        <span class="section-kicker">Sequence</span>
+        <h3>Steps</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Metadata</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="step-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-steps" class="tab">
+      <div class="card">
+        <span class="section-kicker">Inspector</span>
+        <h2>Step Lookup</h2>
+        <input id="step-list-workflow-id" placeholder="Workflow ID to list steps" />
+        <button id="load-steps">Load Steps</button>
+      </div>
+      <div id="step-list" class="list"></div>
+    </section>
+
+    <section id="tab-rules" class="tab">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Routing</span>
+          <h2>Step Rule Editor</h2>
+          <p>List rules by priority and manage Add/Edit/Delete with syntax validation. Drag rows to reorder priority.</p>
+        </div>
+      </div>
+
+      <div class="card helper-card">
+        <span class="section-kicker">Assist</span>
+        <h3>Rule Builder Shortcuts</h3>
+        <div class="helper-grid">
+          <div>
+            <label for="rule-step-select">Select Rule Step</label>
+            <select id="rule-step-select">
+              <option value="">Choose a step from selected workflow</option>
+            </select>
+          </div>
+          <div>
+            <label for="rule-next-step-select">Select Next Step</label>
+            <select id="rule-next-step-select">
+              <option value="">END (empty next step)</option>
+            </select>
+          </div>
+        </div>
+        <div class="chip-actions">
+          <button type="button" id="rule-quick-high-us" class="secondary">Use High-US Condition</button>
+          <button type="button" id="rule-quick-default" class="secondary">Use DEFAULT Condition</button>
+        </div>
+        <p class="meta">Pick from dropdowns to avoid Step ID typing mistakes.</p>
+      </div>
+
+      <form id="rule-form" class="card">
+        <input id="rule-id" type="hidden" />
+        <input id="rule-step-id" placeholder="Step ID" required />
+        <input id="rule-condition" placeholder="Condition (or DEFAULT)" required />
+        <input id="rule-next-step-id" placeholder="Next Step ID (empty to end workflow)" />
+        <input id="rule-priority" type="number" value="1" min="1" required />
+        <div id="rule-syntax-message" class="meta"></div>
+        <div class="row inline-actions">
+          <button type="submit" id="rule-save-button">Save Rule</button>
+          <button type="button" id="rule-reset-button" class="secondary">Reset Rule Form</button>
+        </div>
+      </form>
+
+      <div class="card row">
+        <input id="rule-list-step-id" placeholder="Step ID to list rules" />
+        <button id="load-rules">Load Rules</button>
+      </div>
+
+      <div class="card table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Condition</th>
+              <th>Next Step</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rule-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-execute" class="tab">
+      <span class="section-kicker">Operations</span>
+      <h2>Execute Workflow</h2>
+      <form id="execute-form" class="card">
+        <input id="exec-workflow-id" placeholder="Workflow ID" required />
+        <input id="exec-triggered-by" placeholder="Triggered by (user id)" />
+        <textarea id="exec-data" rows="5">{"amount":250,"country":"US","priority":"High"}</textarea>
+        <input id="exec-max-iterations" type="number" value="100" min="1" />
+        <button type="button" id="exec-use-sample" class="secondary">Use Demo Sample Payload</button>
+        <button type="submit">Start Execution</button>
+      </form>
+
+      <div class="card row">
+        <input id="execution-id" placeholder="Execution ID" />
+        <button id="load-execution">Get Status + Logs</button>
+        <button id="cancel-execution">Cancel</button>
+        <button id="retry-execution">Retry</button>
+        <button id="approve-execution" class="secondary">Approve</button>
+        <button id="reject-execution" class="danger">Reject</button>
+        <button id="load-execution-summary" class="secondary">Summary</button>
+      </div>
+
+      <div class="card">
+        <h3>Execution Progress / Step Actions</h3>
+        <div id="execution-progress" class="progress-grid">
+          <div><span class="meta">Execution ID</span><div id="progress-execution-id">-</div></div>
+          <div><span class="meta">Workflow ID</span><div id="progress-workflow-id">-</div></div>
+          <div><span class="meta">Status</span><div id="progress-status">-</div></div>
+          <div><span class="meta">Current Step</span><div id="progress-current-step">-</div></div>
+          <div><span class="meta">Retries</span><div id="progress-retries">-</div></div>
+          <div><span class="meta">Required Action</span><div id="progress-required-action">-</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Execution Summary</h3>
+        <div id="execution-summary" class="progress-grid">
+          <div><span class="meta">Total Steps</span><div id="summary-step-count">-</div></div>
+          <div><span class="meta">Completed Steps</span><div id="summary-completed-steps">-</div></div>
+          <div><span class="meta">Failed Steps</span><div id="summary-failed-steps">-</div></div>
+          <div><span class="meta">Total Duration</span><div id="summary-duration">-</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Execution Logs</h3>
+        <div id="execution-logs" class="list"></div>
+      </div>
+
+      <pre id="execution-output" class="output"></pre>
+    </section>
+
+    <section id="tab-audit" class="tab">
+      <span class="section-kicker">Compliance</span>
+      <h2>Audit Logs</h2>
+      <div class="card filters-grid audit-filters">
+        <input id="audit-search" placeholder="Search by execution or workflow id" />
+        <select id="audit-status-filter">
+          <option value="all">All Status</option>
+          <option value="in_progress">in_progress</option>
+          <option value="pending_approval">pending_approval</option>
+          <option value="completed">completed</option>
+          <option value="failed">failed</option>
+          <option value="canceled">canceled</option>
+        </select>
+        <label class="meta checkbox-inline"><input type="checkbox" id="audit-auto-refresh" /> Auto refresh (5s)</label>
+        <button id="load-audit">Load Executions</button>
+      </div>
+      <div class="card table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Execution ID</th>
+              <th>Workflow</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Started By</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="audit-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+  <!-- Confirmation Modal -->
+  <div id="modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2 id="modal-title">Confirm Action</h2>
+      <p id="modal-message">Are you sure?</p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="secondary" aria-label="Cancel">Cancel</button>
+        <button id="modal-confirm" class="danger" aria-label="Confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.__API_BASE_URL__ = window.__API_BASE_URL__ || 'http://localhost:3000';
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>

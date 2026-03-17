@@ -1,0 +1,11 @@
+# Demo and media artifacts
+Video/
+Company Logo/
+*.mp4
+*.mov
+*.avi
+
+# Environment and local metadata
+.env
+.DS_Store
+Thumbs.db
