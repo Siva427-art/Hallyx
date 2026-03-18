@@ -115,3 +115,7 @@ Expected:
 - Generated JavaScript and declaration artifacts can exist alongside TS build workflow.
 - Media assets (for example `Video/`, `Company Logo/`) are excluded via `.gitignore`.
 
+
+Demo Video:
+https://drive.google.com/file/d/1sVZFTJeeB7TKMFWG8uzHWp7insbygSXP/view?usp=sharing
+
