@@ -119,3 +119,16 @@ Expected:
 Demo Video:
 https://drive.google.com/file/d/1sVZFTJeeB7TKMFWG8uzHWp7insbygSXP/view?usp=sharing
 
+I Updated This Features 
+
+
+<img width="1659" height="982" alt="Screenshot 2026-03-18 061708" src="https://github.com/user-attachments/assets/8b4b7cf2-f70b-4b31-8449-90f8347f18af" />
+
+
+
+<img width="1919" height="978" alt="Screenshot 2026-03-18 054313" src="https://github.com/user-attachments/assets/d7513ea1-09f4-41b8-883b-4622ebeae2e7" />
+
+
+
+<img width="1909" height="967" alt="Screenshot 2026-03-18 054330" src="https://github.com/user-attachments/assets/79f50b3d-c9e5-4a74-b0b5-d0b8447dae18" />
+
