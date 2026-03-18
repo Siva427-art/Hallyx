@@ -1,4 +1,4 @@
-# Hallyx Workflow Engine
+# Halleyx Workflow Engine
 
 <p align="center">
   <img src="frontend/logo.png" alt="Halleyx Logo" width="110" />
