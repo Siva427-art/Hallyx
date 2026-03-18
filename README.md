@@ -15,7 +15,7 @@
 
 ## Overview
 
-Hallyx is a full-stack workflow engine that lets teams design workflows, define step routing rules, execute flows, pause at approvals, and track complete audit logs from one dashboard.
+Halleyx is a full-stack workflow engine that lets teams design workflows, define step routing rules, execute flows, pause at approvals, and track complete audit logs from one dashboard.
 
 ### Why this project stands out
 
